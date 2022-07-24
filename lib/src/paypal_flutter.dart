@@ -1,7 +1,8 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:paypal_flutter/paypal_flutter.dart';
+import 'package:paypal_flutter/src/interceptor/api_interceptor.dart';
+import 'package:paypal_flutter/src/interceptor/basic_auth_interceptor.dart';
 
 /// {@template paypal_flutter}
 /// A Very Good Project created by Very Good CLI.
@@ -28,26 +29,70 @@ class PaypalFlutter {
 
   String get _getBaseUrl => isSandbox ? sandBoxBaseUrl : liveBaseUrl;
 
-  String get basicAuth =>
-      'Basic ${base64Encode(latin1.encode('$clientId:$clientSecret'))}';
-
-  Future<void> getAccessToken() async {
+  Future<AccessToken> getAccessToken() async {
     try {
-      print(basicAuth);
+      _dio.interceptors.add(
+        BasicAuthInterceptor(
+          clientId: clientId,
+          clientSecret: clientSecret,
+        ),
+      );
       final response = await _dio.post(
         '/v1/oauth2/token',
         queryParameters: {
           'grant_type': 'client_credentials',
         },
-        options: Options(
-          headers: {
-            'Authorization': basicAuth.trim(),
-          },
+        options: Options(),
+      );
+      if (response.statusCode == 200) {
+        return AccessToken.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        return AccessToken(
+          status: Status.error,
+          message: response.data['error_description'] as String,
+        );
+      }
+    } on DioError catch (e) {
+      print(e.response);
+      return AccessToken(
+        status: Status.error,
+        message: 'An error occur, Try again',
+      );
+    }
+  }
+
+  Future<void> createOrder({
+    required String accessToken,
+    required Order order,
+  }) async {
+    try {
+      _dio.interceptors.add(
+        ApiInterceptor(
+          accessToken: accessToken,
         ),
       );
-      print(response);
-    } catch (error) {
-      print(error);
+      final response = await _dio.post(
+        '/v2/checkout/orders',
+        data: order.toJson(),
+      );
+
+      print(response.data);
+
+      if (response.statusCode == 201) {
+        print(response.data);
+        // return Order.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        // return Order(
+        //   status: Status.error,
+        //   message: 'error',
+        // );
+      }
+    } on DioError catch (e) {
+      print(e);
+      // return Order(
+      //   status: Status.error,
+      //   message: 'error',
+      // );
     }
   }
 }
