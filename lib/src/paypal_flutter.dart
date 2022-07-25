@@ -14,7 +14,7 @@ class PaypalFlutter {
     this.isSandbox = true,
     required this.clientId,
     required this.clientSecret,
-  }) : _dio = (dio ?? Dio())..options.baseUrl = sandBoxBaseUrl;
+  }) : _dio = dio ?? Dio();
 
   final Dio _dio;
   final bool isSandbox;
@@ -38,7 +38,7 @@ class PaypalFlutter {
         ),
       );
       final response = await _dio.post(
-        '/v1/oauth2/token',
+        '$_getBaseUrl/v1/oauth2/token',
         queryParameters: {
           'grant_type': 'client_credentials',
         },
@@ -72,7 +72,7 @@ class PaypalFlutter {
         ),
       );
       final response = await _dio.post(
-        '/v2/checkout/orders',
+        '$_getBaseUrl/v2/checkout/orders',
         data: order.toJson(),
       );
 
@@ -88,7 +88,7 @@ class PaypalFlutter {
         // );
       }
     } on DioError catch (e) {
-      print(e);
+      print(e.response);
       // return Order(
       //   status: Status.error,
       //   message: 'error',

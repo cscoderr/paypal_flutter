@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
               breakdown: AmountWithBreakdown(
                 itemTotal: AmountWithCurrencyCode(
                   currencyCode: 'USD',
-                  value: '100,.00',
+                  value: '100.00',
                 ),
               ),
             ),
@@ -82,9 +82,7 @@ class _HomePageState extends State<HomePage> {
                 child: const Text('Check Access Token'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  print(_accessToken?.accessToken);
-                },
+                onPressed: () => createOrder(),
                 child: const Text('Create Order'),
               ),
             ],
