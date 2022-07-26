@@ -15,6 +15,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   paypal_flutter:
     path: ../
+  webview_flutter: ^3.0.4
 
 dev_dependencies:
   flutter_test:

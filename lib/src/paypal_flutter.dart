@@ -4,6 +4,15 @@ import 'package:paypal_flutter/paypal_flutter.dart';
 import 'package:paypal_flutter/src/interceptor/api_interceptor.dart';
 import 'package:paypal_flutter/src/interceptor/basic_auth_interceptor.dart';
 
+class OrderError implements Exception {
+  OrderError(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// {@template paypal_flutter}
 /// A Very Good Project created by Very Good CLI.
 /// {@endtemplate}
@@ -61,7 +70,7 @@ class PaypalFlutter {
     }
   }
 
-  Future<void> createOrder({
+  Future<OrderResponse> createOrder({
     required String accessToken,
     required Order order,
   }) async {
@@ -76,23 +85,38 @@ class PaypalFlutter {
         data: order.toJson(),
       );
 
-      print(response.data);
+      if (response.statusCode == 201) {
+        return OrderResponse.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        throw OrderError(response.data['error_description'] as String);
+      }
+    } on DioError {
+      throw OrderError('An error occur, Try again');
+    }
+  }
+
+  Future<OrderResponse> approve({
+    required String accessToken,
+    required Order order,
+  }) async {
+    try {
+      _dio.interceptors.add(
+        ApiInterceptor(
+          accessToken: accessToken,
+        ),
+      );
+      final response = await _dio.post(
+        '$_getBaseUrl/v2/checkout/orders',
+        data: order.toJson(),
+      );
 
       if (response.statusCode == 201) {
-        print(response.data);
-        // return Order.fromJson(response.data as Map<String, dynamic>);
+        return OrderResponse.fromJson(response.data as Map<String, dynamic>);
       } else {
-        // return Order(
-        //   status: Status.error,
-        //   message: 'error',
-        // );
+        throw OrderError(response.data['error_description'] as String);
       }
-    } on DioError catch (e) {
-      print(e.response);
-      // return Order(
-      //   status: Status.error,
-      //   message: 'error',
-      // );
+    } on DioError {
+      throw OrderError('An error occur, Try again');
     }
   }
 }

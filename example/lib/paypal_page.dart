@@ -1,30 +1,28 @@
-import 'package:example/paypal_page.dart';
 import 'package:flutter/material.dart';
 import 'package:paypal_flutter/paypal_flutter.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class PaypalPage extends StatefulWidget {
+  const PaypalPage({Key? key, required this.accesToken}) : super(key: key);
+
+  final String accesToken;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<PaypalPage> createState() => _PaypalPageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  AccessToken? _accessToken;
-
+class _PaypalPageState extends State<PaypalPage> {
   final paypal = PaypalFlutter(
       clientId:
           'AUv8rrc_P-EbP2E0mpb49BV7rFt3Usr-vdUZO8VGOnjRehGHBXkSzchr37SYF2GNdQFYSp72jh5QUhzG',
       clientSecret:
           'EMnAWe06ioGtouJs7gLYT9chK9-2jJ--7MKRXpI8FesmY_2Kp-d_7aCqff7M9moEJBvuXoBO4clKtY0v');
-  Future<void> getToken() async {
-    final accesToken = await paypal.getAccessToken();
-    _accessToken = accesToken;
-  }
+
+  String? checkoutUrl;
 
   Future<void> createOrder() async {
     final response = await paypal.createOrder(
-      accessToken: _accessToken?.accessToken ?? '',
+      accessToken: widget.accesToken,
       order: Order(
         intent: Intents.CAPTURE,
         purchaseUnits: [
@@ -56,49 +54,29 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+
+    checkoutUrl =
+        response.links!.where((element) => element.rel == 'approve').first.href;
   }
 
   @override
   void initState() {
+    createOrder();
     super.initState();
-    getToken();
   }
 
   @override
   Widget build(BuildContext context) {
+    print(checkoutUrl);
     return Scaffold(
-      body: SafeArea(
-        child: SizedBox.expand(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () => getToken(),
-                child: const Text('Get Access Token'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  print(_accessToken?.accessToken);
-                },
-                child: const Text('Check Access Token'),
-              ),
-              ElevatedButton(
-                onPressed: () => createOrder(),
-                child: const Text('Create Order'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        PaypalPage(accesToken: _accessToken?.accessToken ?? ''),
-                  ),
-                ),
-                child: const Text('Show Page'),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text('Paypal'),
       ),
+      body: SafeArea(
+          child: WebView(
+        initialUrl: checkoutUrl,
+        javascriptMode: JavascriptMode.unrestricted,
+      )),
     );
   }
 }
